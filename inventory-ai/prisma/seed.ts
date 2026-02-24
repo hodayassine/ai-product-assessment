@@ -1,11 +1,6 @@
 import "dotenv/config";
-import { PrismaClient } from "../node_modules/.prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { hash } from "bcryptjs";
-
-const url = process.env.DATABASE_URL || "file:./dev.db";
-const adapter = new PrismaBetterSqlite3({ url });
-const prisma = new PrismaClient({ adapter });
+import { prisma } from "../lib/prisma";
 
 async function main() {
   const adminHash = await hash("admin123", 10);

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Pencil } from "lucide-react";
 import type { InventoryItem } from "@prisma/client";
 import { DeleteButton } from "./DeleteButton";
 import { StatusBadge } from "./StatusBadge";
@@ -71,8 +72,9 @@ export function ItemTable({
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/dashboard/items/${item.id}/edit`}
-                      className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                     >
+                      <Pencil className="size-3.5" aria-hidden />
                       Edit
                     </Link>
                     <DeleteButton itemId={item.id} itemName={item.name} />

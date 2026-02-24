@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Select, { type SingleValue, type StylesConfig } from "react-select";
 
 export type SelectOption = { value: string; label: string };
@@ -44,23 +45,42 @@ export function SearchableSelect({
   id,
   "aria-label": ariaLabel,
 }: SearchableSelectProps) {
+  const [mounted, setMounted] = useState(false);
   const selected = options.find((o) => o.value === value) ?? null;
+  const stableId = id ?? name;
+  const displayLabel = selected?.label ?? placeholder;
+
+  // Render react-select only after mount so server and client both output the same placeholder (no hydration mismatch)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="w-full">
       <input type="hidden" name={name} value={value} readOnly />
-      <Select<SelectOption>
-        inputId={id}
-        aria-label={ariaLabel}
-        options={options}
-        value={selected}
-        onChange={(opt: SingleValue<SelectOption>) => onChange(opt?.value ?? "")}
-        placeholder={placeholder}
-        isClearable={allowClear}
-        isSearchable
-        styles={customStyles}
-        classNamePrefix="rs"
-      />
+      {mounted ? (
+        <Select<SelectOption>
+          instanceId={stableId}
+          inputId={stableId}
+          aria-label={ariaLabel}
+          options={options}
+          value={selected}
+          onChange={(opt: SingleValue<SelectOption>) => onChange(opt?.value ?? "")}
+          placeholder={placeholder}
+          isClearable={allowClear}
+          isSearchable
+          styles={customStyles}
+          classNamePrefix="rs"
+        />
+      ) : (
+        <div
+          className="min-h-[42px] w-full rounded-md border border-[#cbd5e1] bg-white px-3 py-2.5 text-slate-900"
+          style={{ boxSizing: "border-box" }}
+          aria-hidden
+        >
+          {displayLabel}
+        </div>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useActionState } from "react";
 import Link from "next/link";
+import { ArrowLeft, Check } from "lucide-react";
 import { createItem, updateItem } from "@/app/dashboard/actions";
 import type { InventoryItem } from "@prisma/client";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
@@ -123,14 +124,16 @@ export function ItemForm({ item }: { item?: InventoryItem }) {
       <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-5">
         <button
           type="submit"
-          className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
         >
+          <Check className="size-4" aria-hidden />
           {item ? "Save changes" : "Create item"}
         </button>
         <Link
           href="/dashboard"
-          className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
         >
+          <ArrowLeft className="size-4" aria-hidden />
           Cancel
         </Link>
       </div>

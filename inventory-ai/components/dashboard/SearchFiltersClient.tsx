@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Search } from "lucide-react";
 import { SearchableSelect, type SelectOption } from "@/components/ui/SearchableSelect";
 
 const STATUS_OPTIONS: SelectOption[] = [
@@ -77,8 +78,9 @@ export function SearchFiltersClient({ initial = {}, categories }: SearchFiltersC
       </div>
       <button
         type="submit"
-        className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
+        className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
       >
+        <Search className="size-4" aria-hidden />
         Search
       </button>
     </form>

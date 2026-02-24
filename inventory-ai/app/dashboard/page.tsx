@@ -5,6 +5,7 @@ import { ItemTable } from "@/components/dashboard/ItemTable";
 import { SearchFilters } from "@/components/dashboard/SearchFilters";
 import { getInventorySummary, suggestReorder } from "@/lib/ai";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import type { InventoryStatus } from "@/lib/prisma-types";
 
 type SearchParams = { name?: string; category?: string; status?: string };
@@ -47,8 +48,9 @@ export default async function DashboardPage({
         {canEdit && (
           <Link
             href="/dashboard/items/new"
-            className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
           >
+            <Plus className="size-4" aria-hidden />
             Add item
           </Link>
         )}

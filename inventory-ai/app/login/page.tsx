@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
+import { LogIn } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 
@@ -84,8 +85,9 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="mt-6 w-full rounded-lg bg-indigo-600 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:opacity-60"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:opacity-60"
         >
+          <LogIn className="size-4" aria-hidden />
           {loading ? "Signing in…" : "Sign in"}
         </button>
         <p className="mt-5 text-center text-xs text-slate-500">
