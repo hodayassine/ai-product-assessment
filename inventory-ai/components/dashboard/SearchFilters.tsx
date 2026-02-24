@@ -9,7 +9,7 @@ export async function SearchFilters({ initial = {} }: { initial?: Initial }) {
     distinct: ["category"],
     orderBy: { category: "asc" },
   });
-  const categoryList = categories.map((c) => c.category);
+  const categoryList = categories.map((c: { category: string }) => c.category);
 
   return <SearchFiltersClient initial={initial} categories={categoryList} />;
 }

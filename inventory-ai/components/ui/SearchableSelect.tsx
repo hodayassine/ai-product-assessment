@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Select, { type SingleValue, type StylesConfig } from "react-select";
+import dynamic from "next/dynamic";
+import type { SingleValue, StylesConfig } from "react-select";
 
 export type SelectOption = { value: string; label: string };
+
+// Load react-select only on the client to avoid SSR/hydration ID issues
+const ReactSelect = dynamic(() => import("react-select"), { ssr: false });
 
 const customStyles: StylesConfig<SelectOption, false> = {
   control: (base, state) => ({
@@ -45,42 +48,27 @@ export function SearchableSelect({
   id,
   "aria-label": ariaLabel,
 }: SearchableSelectProps) {
-  const [mounted, setMounted] = useState(false);
   const selected = options.find((o) => o.value === value) ?? null;
   const stableId = id ?? name;
-  const displayLabel = selected?.label ?? placeholder;
-
-  // Render react-select only after mount so server and client both output the same placeholder (no hydration mismatch)
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const handleChange = (opt: SingleValue<SelectOption>) => onChange(opt?.value ?? "");
 
   return (
     <div className="w-full">
       <input type="hidden" name={name} value={value} readOnly />
-      {mounted ? (
-        <Select<SelectOption>
-          instanceId={stableId}
-          inputId={stableId}
-          aria-label={ariaLabel}
-          options={options}
-          value={selected}
-          onChange={(opt: SingleValue<SelectOption>) => onChange(opt?.value ?? "")}
-          placeholder={placeholder}
-          isClearable={allowClear}
-          isSearchable
-          styles={customStyles}
-          classNamePrefix="rs"
-        />
-      ) : (
-        <div
-          className="min-h-[42px] w-full rounded-md border border-[#cbd5e1] bg-white px-3 py-2.5 text-slate-900"
-          style={{ boxSizing: "border-box" }}
-          aria-hidden
-        >
-          {displayLabel}
-        </div>
-      )}
+      <ReactSelect
+        instanceId={stableId}
+        inputId={stableId}
+        aria-label={ariaLabel}
+        options={options}
+        value={selected}
+        // Casts are to satisfy react-select's generic types when using dynamic()
+        onChange={handleChange as any}
+        placeholder={placeholder}
+        isClearable={allowClear}
+        isSearchable
+        styles={customStyles as any}
+        classNamePrefix="rs"
+      />
     </div>
   );
 }
