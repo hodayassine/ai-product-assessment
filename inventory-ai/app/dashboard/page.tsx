@@ -7,6 +7,7 @@ import { getInventorySummary, suggestReorder } from "@/lib/ai";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import type { InventoryStatus } from "@/lib/prisma-types";
+import type { ReorderSuggestion } from "@/lib/ai";
 
 type SearchParams = { name?: string; category?: string; status?: string };
 
@@ -69,7 +70,7 @@ export default async function DashboardPage({
             <span aria-hidden>💡</span> Reorder suggestions
           </h2>
           <ul className="space-y-2 text-sm text-amber-800">
-            {reorderSuggestions.slice(0, 5).map((s) => (
+            {reorderSuggestions.slice(0, 5).map((s: ReorderSuggestion) => (
               <li key={s.itemId} className="flex items-baseline gap-2">
                 <Link
                   href={`/dashboard/items/${s.itemId}/edit`}
