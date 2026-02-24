@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Pencil } from "lucide-react";
-import type { InventoryItem } from "@prisma/client";
+import type { InventoryItem } from "@/lib/prisma-types";
 import { DeleteButton } from "./DeleteButton";
 import { StatusBadge } from "./StatusBadge";
 

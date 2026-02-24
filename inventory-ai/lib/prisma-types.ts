@@ -1,1 +1,1 @@
-export type { InventoryStatus } from "../node_modules/.prisma/client";
+export type { InventoryStatus, InventoryItem } from "../node_modules/.prisma/client";

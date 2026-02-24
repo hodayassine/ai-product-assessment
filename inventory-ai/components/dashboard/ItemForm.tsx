@@ -4,7 +4,7 @@ import { useState, useActionState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check } from "lucide-react";
 import { createItem, updateItem } from "@/app/dashboard/actions";
-import type { InventoryItem } from "@prisma/client";
+import type { InventoryItem } from "@/lib/prisma-types";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 
 const STATUS_OPTIONS = [
