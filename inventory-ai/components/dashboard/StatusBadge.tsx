@@ -7,12 +7,19 @@ const styles: Record<InventoryStatus, string> = {
   Discontinued: "bg-slate-200 text-slate-700",
 };
 
+const labels: Record<InventoryStatus, string> = {
+  InStock: "In stock",
+  LowStock: "Low stock",
+  Ordered: "Ordered",
+  Discontinued: "Discontinued",
+};
+
 export function StatusBadge({ status }: { status: InventoryStatus }) {
   return (
     <span
       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${styles[status]}`}
     >
-      {status}
+      {labels[status]}
     </span>
   );
 }
