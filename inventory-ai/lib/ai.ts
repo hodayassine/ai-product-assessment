@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import type { InventoryStatus } from "@/lib/prisma-types";
+import type { InventoryStatus, InventoryItem } from "@/lib/prisma-types";
 
 /**
  * Placeholder AI service for inventory insights.
@@ -21,7 +21,7 @@ export async function suggestReorder(): Promise<ReorderSuggestion[]> {
     where: { status: "LowStock" },
     orderBy: { quantity: "asc" },
   });
-  return low.map((item) => ({
+  return low.map((item: InventoryItem) => ({
     itemId: item.id,
     name: item.name,
     quantity: item.quantity,
