@@ -1,12 +1,12 @@
 // Mini Library Management System (AI-First)
-// SQLite for local development; swap provider/url for production (e.g. Vercel Postgres)
+// PostgreSQL for local development and Vercel deployment
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
