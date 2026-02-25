@@ -44,8 +44,15 @@ export async function classifyTicket(
     { responseFormat: "json_object" }
   );
 
-  const category = isTicketCategory(raw?.category) ? raw.category : "Other";
-  const severity = isTicketSeverity(raw?.severity) ? raw.severity : "Medium";
+  let category: TicketClassification["category"] = "Other";
+  if (raw && raw.category && isTicketCategory(raw.category)) {
+    category = raw.category;
+  }
+
+  let severity: TicketClassification["severity"] = "Medium";
+  if (raw && raw.severity && isTicketSeverity(raw.severity)) {
+    severity = raw.severity;
+  }
 
   return { category, severity };
 }
