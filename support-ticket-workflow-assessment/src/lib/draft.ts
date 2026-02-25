@@ -30,7 +30,7 @@ function buildContextBlock(context: DraftContext): string {
       ef.customerEmail && `Customer email: ${ef.customerEmail}`,
       ef.productOrFeature && `Product/Feature: ${ef.productOrFeature}`,
       ef.affectedComponentOrError && `Technical detail: ${ef.affectedComponentOrError}`,
-    ].filter(Boolean);
+    ].filter((x): x is string => Boolean(x));
     if (fields.length > 0) {
       parts.push("Extracted context:", ...fields);
     }
