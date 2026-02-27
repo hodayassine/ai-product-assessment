@@ -60,7 +60,7 @@ export async function getGenreOptions(): Promise<string[]> {
   const dbGenres = await prisma.book
     .findMany({ select: { genre: true }, distinct: ["genre"] })
     .then((rows) => rows.map((r) => r.genre).filter(Boolean));
-  const predefinedSet = new Set<string>(PREDEFINED_GENRES as string[]);
+  const predefinedSet = new Set<string>([...PREDEFINED_GENRES]);
   const extraFromDb = dbGenres.filter((g) => !predefinedSet.has(g)).sort();
   return [...PREDEFINED_GENRES, ...extraFromDb];
 }
