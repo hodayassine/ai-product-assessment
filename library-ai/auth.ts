@@ -1,6 +1,8 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma/client";
+import { verifyPassword } from "@/lib/auth/password";
 
 export type Role = "ADMIN" | "LIBRARIAN" | "MEMBER";
 
@@ -10,16 +12,47 @@ type JWTWithUser = {
   email?: string | null;
   name?: string | null;
   picture?: string | null;
+  sub?: string;
 };
+
+/** User fields we need for credential authorize (password is optional on model). */
+type UserWithPassword = { id: string; email: string | null; name: string | null; role: string; password: string | null };
 
 const nextAuth = NextAuth as unknown as (config: any) => any;
 
 export const { handlers, signIn, signOut, auth } = nextAuth({
+  basePath: "/api/auth",
   providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID!,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+    Credentials({
+      name: "Email and password",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || typeof credentials.password !== "string") return null;
+        const email = String(credentials.email).trim().toLowerCase();
+        const user = await prisma.user.findUnique({
+          where: { email },
+          select: { id: true, email: true, name: true, role: true, password: true } as { id: true; email: true; name: true; role: true; password: true },
+        }) as UserWithPassword | null;
+        if (!user?.password) return null;
+        const ok = await verifyPassword(credentials.password, user.password);
+        if (!ok) return null;
+        return { id: user.id, email: user.email ?? undefined, name: user.name ?? undefined, role: user.role };
+      },
     }),
+    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
+      ? [
+          Google({
+            clientId: process.env.AUTH_GOOGLE_ID,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET,
+            authorization: {
+              params: { prompt: "consent", access_type: "offline" },
+            },
+          }),
+        ]
+      : []),
   ],
   session: {
     strategy: "jwt",
@@ -29,8 +62,16 @@ export const { handlers, signIn, signOut, auth } = nextAuth({
     async jwt({ token, account, profile }: any) {
       const t = token as JWTWithUser;
 
-      // On first sign-in with Google, ensure a User record exists and cache id/role in the token
+      // Credentials sign-in: user id and role are on the token (from authorize return)
+      if (account?.provider === "credentials" && token.sub) {
+        t.userId = token.sub;
+        t.role = (token.role as Role) ?? "MEMBER";
+        return token;
+      }
+
+      // Google SSO: upsert user and cache id/role. First user gets ADMIN.
       if (account && profile && t.email) {
+        const userCount = await prisma.user.count();
         const dbUser = await prisma.user.upsert({
           where: { email: t.email },
           update: {
@@ -47,6 +88,7 @@ export const { handlers, signIn, signOut, auth } = nextAuth({
               t.picture ??
               (profile as { picture?: string }).picture ??
               undefined,
+            role: userCount === 0 ? "ADMIN" : "MEMBER",
           },
           select: { id: true, role: true },
         });
@@ -54,7 +96,6 @@ export const { handlers, signIn, signOut, auth } = nextAuth({
         t.userId = dbUser.id;
         t.role = dbUser.role as Role;
       } else if (!t.role && t.userId) {
-        // Subsequent requests: if we somehow lost role, reload it from DB
         const dbUser = await prisma.user.findUnique({
           where: { id: t.userId },
           select: { role: true },

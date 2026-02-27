@@ -1,8 +1,12 @@
 import { requireAuth } from "@/lib/auth";
 import { getBookById } from "@/lib/actions/books";
+import { getActiveBorrowForUserAndBook } from "@/lib/actions/borrow";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, Pencil, BookOpen } from "lucide-react";
 import { DeleteBookButton } from "./DeleteBookButton";
+import { BorrowActions } from "./BorrowActions";
+import { BookSummarySection } from "./BookSummarySection";
 
 export default async function BookDetailPage({
   params,
@@ -14,7 +18,7 @@ export default async function BookDetailPage({
   if (!result.success) {
     if (result.error === "Book not found") notFound();
     return (
-      <div className="rounded-md border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
         {result.error}
       </div>
     );
@@ -23,40 +27,51 @@ export default async function BookDetailPage({
   const book = result.data;
   const canManage = session.user.role === "ADMIN" || session.user.role === "LIBRARIAN";
   const canDelete = session.user.role === "ADMIN";
+  const activeBorrow = await getActiveBorrowForUserAndBook(session.user.id, book.id);
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <Link
           href="/dashboard/books"
-          className="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          className="flex items-center gap-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
         >
-          ← Back to books
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+          Back to books
         </Link>
         {canManage && (
           <Link
             href={`/dashboard/books/${book.id}/edit`}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className="flex items-center gap-2 rounded-xl bg-[hsl(var(--accent))] px-4 py-2.5 text-sm font-medium text-[hsl(var(--accent-foreground))] hover:opacity-90"
           >
+            <Pencil className="h-4 w-4 shrink-0" aria-hidden />
             Edit
           </Link>
         )}
       </div>
-      <div className="rounded-md border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
+      <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 shadow-sm">
+        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-[hsl(var(--foreground))]">
+          <BookOpen className="h-7 w-7 shrink-0 text-[hsl(var(--muted-foreground))]" aria-hidden />
           {book.title}
         </h1>
-        <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+        <p className="mt-1 text-[hsl(var(--muted-foreground))]">
           {book.author} · {book.genre} · {book.publishedYear}
         </p>
-        <p className="mt-4 text-sm text-zinc-700 dark:text-zinc-300">
+        <p className="mt-4 text-sm text-[hsl(var(--foreground))]">
           {book.description ?? "No description."}
         </p>
-        <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-500">
+        <p className="mt-4 text-sm text-[hsl(var(--muted-foreground))]">
           {book.availableCopies} of {book.totalCopies} copies available
         </p>
+        <BorrowActions
+          bookId={book.id}
+          userId={session.user.id}
+          availableCopies={book.availableCopies}
+          activeBorrowId={activeBorrow?.id ?? null}
+        />
+        <BookSummarySection description={book.description} />
         {canDelete && (
-          <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+          <div className="mt-6 border-t border-[hsl(var(--border))] pt-4">
             <DeleteBookButton bookId={book.id} bookTitle={book.title} />
           </div>
         )}

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma/client";
-import type { Book } from "@prisma/client";
+import type { Book, Prisma } from "@prisma/client";
 import { requireRole } from "@/lib/auth";
 import { createBookSchema, updateBookSchema } from "@/lib/validations/book";
 import { revalidatePath } from "next/cache";
@@ -10,16 +10,59 @@ export type BookListResult = { success: true; data: Book[] } | { success: false;
 export type BookOneResult = { success: true; data: Book } | { success: false; error: string };
 export type BookMutateResult = { success: true; id?: string } | { success: false; error: string };
 
-export async function getBooks(): Promise<BookListResult> {
+export type BookSearchParams = {
+  q?: string;
+  genre?: string;
+  available?: "yes" | "no" | "";
+};
+
+export async function getBooks(params?: BookSearchParams): Promise<BookListResult> {
   try {
     await requireRole(["ADMIN", "LIBRARIAN", "MEMBER"]);
+    const where: Prisma.BookWhereInput = {};
+    if (params?.q?.trim()) {
+      const term = params.q.trim();
+      where.OR = [
+        { title: { contains: term, mode: "insensitive" } },
+        { author: { contains: term, mode: "insensitive" } },
+      ];
+    }
+    if (params?.genre?.trim()) {
+      where.genre = { equals: params.genre.trim(), mode: "insensitive" };
+    }
+    if (params?.available === "yes") {
+      where.availableCopies = { gt: 0 };
+    }
+    if (params?.available === "no") {
+      where.availableCopies = 0;
+    }
     const books = await prisma.book.findMany({
+      where: Object.keys(where).length ? where : undefined,
       orderBy: { createdAt: "desc" },
     });
     return { success: true, data: books };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Failed to list books" };
   }
+}
+
+/** Genres that already exist in the database (for filters). */
+export async function getGenres(): Promise<string[]> {
+  await requireRole(["ADMIN", "LIBRARIAN", "MEMBER"]);
+  const books = await prisma.book.findMany({ select: { genre: true }, distinct: ["genre"] });
+  return books.map((b) => b.genre).filter(Boolean).sort();
+}
+
+/** Full list for forms and search: predefined genres + any DB-only genres, deduplicated. */
+export async function getGenreOptions(): Promise<string[]> {
+  await requireRole(["ADMIN", "LIBRARIAN", "MEMBER"]);
+  const { PREDEFINED_GENRES } = await import("@/lib/constants/genres");
+  const dbGenres = await prisma.book
+    .findMany({ select: { genre: true }, distinct: ["genre"] })
+    .then((rows) => rows.map((r) => r.genre).filter(Boolean));
+  const predefinedSet = new Set(PREDEFINED_GENRES);
+  const extraFromDb = dbGenres.filter((g) => !predefinedSet.has(g)).sort();
+  return [...PREDEFINED_GENRES, ...extraFromDb];
 }
 
 export async function getBookById(id: string): Promise<BookOneResult> {

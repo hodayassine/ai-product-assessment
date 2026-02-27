@@ -18,6 +18,8 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  // Hashed password for credential sign-in; null for SSO-only users
+  password      String?
   // Stored as an uppercase string: "ADMIN" | "LIBRARIAN" | "MEMBER"
   role          String    @default("MEMBER")
   createdAt     DateTime  @default(now())

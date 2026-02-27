@@ -1,6 +1,8 @@
 import { requireAuth } from "@/lib/auth";
 import { signOut } from "@/auth";
 import Link from "next/link";
+import { BookMarked, LogOut } from "lucide-react";
+import { SidebarNav } from "./SidebarNav";
 
 export default async function DashboardLayout({
   children,
@@ -8,51 +10,41 @@ export default async function DashboardLayout({
   const session = await requireAuth();
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/dashboard" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 hover:underline">
+    <div className="min-h-screen bg-[hsl(var(--background))]">
+      <header className="sticky top-0 z-10 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]/95 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 text-lg font-semibold tracking-tight text-[hsl(var(--foreground))] hover:opacity-80"
+          >
+            <BookMarked className="h-6 w-6 shrink-0" aria-hidden />
             Library AI
           </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">
+          <div className="flex items-center gap-3">
+            <span
+              className="max-w-[180px] truncate text-sm text-[hsl(var(--muted-foreground))]"
+              title={session.user.email ?? ""}
+            >
               {session.user.email}
             </span>
-            <span className="rounded bg-zinc-200 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-600 dark:text-zinc-200">
+            <span className="rounded-lg bg-[hsl(var(--muted))] px-2.5 py-1 text-xs font-medium text-[hsl(var(--foreground))]">
               {session.user.role}
             </span>
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/" });
-              }}
-            >
+            <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>
               <button
                 type="submit"
-                className="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                className="flex items-center gap-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
               >
+                <LogOut className="h-4 w-4" aria-hidden />
                 Sign out
               </button>
             </form>
           </div>
         </div>
       </header>
-      <div className="mx-auto flex max-w-6xl gap-8 px-4 py-6">
+      <div className="mx-auto flex max-w-5xl gap-10 px-4 py-8">
         <aside className="w-48 shrink-0">
-          <nav className="flex flex-col gap-1">
-            <Link
-              href="/dashboard"
-              className="rounded-md px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/dashboard/books"
-              className="rounded-md px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700"
-            >
-              Books
-            </Link>
-          </nav>
+          <SidebarNav role={session.user.role as "ADMIN" | "LIBRARIAN" | "MEMBER"} />
         </aside>
         <main className="min-w-0 flex-1">{children}</main>
       </div>

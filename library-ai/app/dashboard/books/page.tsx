@@ -1,71 +1,112 @@
 import { requireAuth } from "@/lib/auth";
-import { getBooks } from "@/lib/actions/books";
+import { getBooks, getGenreOptions } from "@/lib/actions/books";
+import type { BookSearchParams } from "@/lib/actions/books";
+import { getMyBorrowals } from "@/lib/actions/borrow";
 import Link from "next/link";
+import { Suspense } from "react";
+import { BookOpen, Plus, Pencil } from "lucide-react";
+import { BookSearchForm } from "./BookSearchForm";
+import { BorrowButton } from "./BorrowButton";
+import { DeleteInlineButton } from "./DeleteInlineButton";
 
-export default async function BooksPage() {
+type Props = { searchParams: Promise<{ q?: string; genre?: string; available?: string }> };
+
+export default async function BooksPage({ searchParams }: Props) {
   const session = await requireAuth();
-  const result = await getBooks();
+  const params = await searchParams;
+  const search: BookSearchParams = {
+    q: params.q ?? undefined,
+    genre: params.genre ?? undefined,
+    available: (params.available === "yes" || params.available === "no" ? params.available : undefined) as BookSearchParams["available"],
+  };
+  const [booksResult, genres, borrowals] = await Promise.all([
+    getBooks(search),
+    getGenreOptions(),
+    getMyBorrowals(session.user.id),
+  ]);
+  const activeBookIds = new Set(
+    borrowals.filter((r) => !r.returnedAt).map((r) => r.book.id)
+  );
 
-  if (!result.success) {
+  if (!booksResult.success) {
     return (
-      <div className="rounded-md border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
-        {result.error}
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+        {booksResult.error}
       </div>
     );
   }
 
-  const books = result.data;
+  const books = booksResult.data;
   const canManage = session.user.role === "ADMIN" || session.user.role === "LIBRARIAN";
+  const isAdmin = session.user.role === "ADMIN";
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-[hsl(var(--foreground))]">
+          <BookOpen className="h-7 w-7 shrink-0" aria-hidden />
           Books
         </h1>
         {canManage && (
           <Link
             href="/dashboard/books/new"
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className="flex items-center gap-2 rounded-xl bg-[hsl(var(--accent))] px-4 py-2.5 text-sm font-medium text-[hsl(var(--accent-foreground))] hover:opacity-90"
           >
+            <Plus className="h-4 w-4 shrink-0" aria-hidden />
             Add book
           </Link>
         )}
       </div>
 
+      <Suspense fallback={<div className="mb-6 h-12 animate-pulse rounded-xl bg-[hsl(var(--muted))]" />}>
+        <BookSearchForm genres={genres} />
+      </Suspense>
+
       {books.length === 0 ? (
-        <p className="rounded-md border border-zinc-200 bg-zinc-100 py-8 text-center text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
-          No books yet.
+        <p className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] py-12 text-center text-[hsl(var(--muted-foreground))]">
+          No books match your filters.
         </p>
       ) : (
         <ul className="space-y-3">
           {books.map((book) => (
             <li
               key={book.id}
-              className="flex items-center justify-between gap-4 rounded-md border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800"
+              className="flex items-center justify-between gap-4 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 shadow-sm transition-shadow hover:shadow"
             >
               <div className="min-w-0">
                 <Link
                   href={`/dashboard/books/${book.id}`}
-                  className="font-medium text-zinc-900 hover:underline dark:text-zinc-100"
+                  className="font-medium text-[hsl(var(--foreground))] hover:underline"
                 >
                   {book.title}
                 </Link>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
                   {book.author} · {book.genre} · {book.publishedYear}
                 </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-500">
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
                   {book.availableCopies} / {book.totalCopies} available
                 </p>
               </div>
-              {canManage && (
-                <Link
-                  href={`/dashboard/books/${book.id}/edit`}
-                  className="shrink-0 text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                >
-                  Edit
-                </Link>
-              )}
+              <div className="flex shrink-0 items-center gap-2">
+                <BorrowButton
+                  bookId={book.id}
+                  userId={session.user.id}
+                  availableCopies={book.availableCopies}
+                  hasBorrowed={activeBookIds.has(book.id)}
+                />
+                {canManage && (
+                  <Link
+                    href={`/dashboard/books/${book.id}/edit`}
+                    className="flex items-center gap-1.5 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-1.5 text-sm font-medium text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
+                  >
+                    <Pencil className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    Edit
+                  </Link>
+                )}
+                {isAdmin && (
+                  <DeleteInlineButton bookId={book.id} bookTitle={book.title} />
+                )}
+              </div>
             </li>
           ))}
         </ul>

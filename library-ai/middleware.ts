@@ -8,7 +8,9 @@ export default auth((req: NextRequest & { auth?: unknown }) => {
   if (
     path === "/" ||
     path.startsWith("/login") ||
+    path.startsWith("/signup") ||
     path.startsWith("/api/auth") ||
+    path.startsWith("/api/groq-status") ||
     path.startsWith("/unauthorized")
   ) {
     return;
